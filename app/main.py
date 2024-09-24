@@ -1,10 +1,15 @@
-from fastapi import FastAPI, HTTPException, status, Response
+from fastapi import Depends, FastAPI, HTTPException, status, Response
 from fastapi.params import Body
 from pydantic import BaseModel
-from typing import Optional
+from typing import Annotated, Optional
 from random import randrange
+from app import database
+from sqlalchemy.orm import Session
+from app import database_models
 
 app = FastAPI()
+
+database
 
 class Post(BaseModel):
     title: str
@@ -28,7 +33,9 @@ def find_index_post(id):
 async def root():
     return {"message": "Hello World"}
 @app.get("/posts")
-def get_posts():
+
+async def get_posts(db: Annotated[Session, Depends(database.get_db)]):
+    my_posts = db.query(database_models.Posts).all()
     return {"data": my_posts}
 
 @app.post("/posts",status_code=status.HTTP_201_CREATED)
