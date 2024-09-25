@@ -9,7 +9,6 @@ from app import database_models
 
 app = FastAPI()
 
-database
 
 class Post(BaseModel):
     title: str
@@ -34,41 +33,53 @@ async def root():
     return {"message": "Hello World"}
 @app.get("/posts")
 
-async def get_posts(db: Annotated[Session, Depends(database.get_db)]):
+async def get_posts(db:Session= Depends(database.get_db)):
     my_posts = db.query(database_models.Posts).all()
     return {"data": my_posts}
 
 @app.post("/posts",status_code=status.HTTP_201_CREATED)
-def createpost(post: Post):
-    post_dic = post.dict()
-    post_dic['id'] = randrange(0,10000)
-    my_posts.append(post_dic)
-    return {"data": post_dic}
+def createpost(post: Post , db:Session= Depends(database.get_db)):
+    # post_dic = post.dict()
+    # post_dic['id'] = randrange(0,10000)
+    # my_posts.append(post_dic)
+    new_post = database_models.Posts(title=post.title, content=post.content, published=post.published)
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
+    return {"data": new_post}
 
 @app.get("/posts/{id}")
-def get_post(id: int):
-    print(id)
-    post = find_post(id)
+def get_post(id: int, db: Session = Depends(database.get_db)):
+    # print(id)
+    # post = find_post(id)
+   
+    post = db.query(database_models.Posts).filter(database_models.Posts.id == id).first()
+    print(post)
+
     if not post:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"Post with id {id} not found.")
-        
+         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"Post with id {id} not found.")
     return {"post details": post}
 
 @app.delete("/posts/{id}",status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int):
-    index = find_index_post(id)
-    if index == None:
+def delete_post(id: int, db: Session=Depends(database.get_db)):
+    # index = find_index_post(id)
+    post = db.query(database_models.Posts).filter(database_models.Posts.id == id)
+
+    if post.first() == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"post with id {id} does not exist")
-    my_posts.pop(index)
+    post.delete(synchronize_session=False)
+    db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @app.put("/posts/{id}")
-def update_post(id: int, post: Post):
-    index = find_index_post(id)
-    if index == None:
+def update_post(id: int, post: Post, db: Session=Depends(database.get_db)):
+    # index = find_index_post(id)
+    post_query = db.query(database_models.Posts).filter(database_models.Posts.id == id)
+    post = post_query.first()
+    if post == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"Post with id {id} not found")
-    post_dict = post.dict()
-    post_dict['id'] = id
-    my_posts[index] = post_dict
-    print(post)
-    return {"data": post_dict}
+    post_query.update({'title':'Am harded coded tile', 'content':'Am harded codec content'},synchronize_session=False)
+    db.commit()
+    # my_posts[index] = post_dict
+    # print(post)
+    return {"data": "Data updated within the database"}
