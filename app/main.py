@@ -1,20 +1,15 @@
 from fastapi import Depends, FastAPI, HTTPException, status, Response
 from fastapi.params import Body
 from pydantic import BaseModel
-from typing import Annotated, Optional
+from typing import Annotated, Optional, List
 from random import randrange
 from app import database
 from sqlalchemy.orm import Session
 from app import database_models
+from app import schemas
 
 app = FastAPI()
 
-
-class Post(BaseModel):
-    title: str
-    content: str
-    published: bool = True
-    rating: Optional[int] = None
 
 my_posts = [{"title": "title of post 1", "content": "content of post 1", "id": 1},{"title": "title of post 2", "content": "content of post 2", "id": 2}]
 
@@ -31,14 +26,13 @@ def find_index_post(id):
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
-@app.get("/posts")
-
+@app.get("/posts",response_model=List[schemas.Post])
 async def get_posts(db:Session= Depends(database.get_db)):
     my_posts = db.query(database_models.Posts).all()
-    return {"data": my_posts}
+    return my_posts
 
-@app.post("/posts",status_code=status.HTTP_201_CREATED)
-def createpost(post: Post , db:Session= Depends(database.get_db)):
+@app.post("/posts",status_code=status.HTTP_201_CREATED,response_model=schemas.Post)
+def createpost(post: schemas.CreatePost , db:Session= Depends(database.get_db)):
     # post_dic = post.dict()
     # post_dic['id'] = randrange(0,10000)
     # my_posts.append(post_dic)
@@ -46,7 +40,7 @@ def createpost(post: Post , db:Session= Depends(database.get_db)):
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
-    return {"data": new_post}
+    return new_post
 
 @app.get("/posts/{id}")
 def get_post(id: int, db: Session = Depends(database.get_db)):
@@ -72,14 +66,18 @@ def delete_post(id: int, db: Session=Depends(database.get_db)):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @app.put("/posts/{id}")
-def update_post(id: int, post: Post, db: Session=Depends(database.get_db)):
+def update_post(id: int, updated_post: schemas.CreatePost, db: Session=Depends(database.get_db)):
     # index = find_index_post(id)
+    
     post_query = db.query(database_models.Posts).filter(database_models.Posts.id == id)
     post = post_query.first()
+    
     if post == None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"Post with id {id} not found")
-    post_query.update({'title':'Am harded coded tile', 'content':'Am harded codec content'},synchronize_session=False)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"Post with id {id} not found")
+    
+    post_query.update(updated_post.dict(),synchronize_session=False)
     db.commit()
     # my_posts[index] = post_dict
     # print(post)
-    return {"data": "Data updated within the database"}
+    return post_query.first()
