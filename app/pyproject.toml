@@ -1,0 +1,7 @@
+[tool.ruff]
+show-fixes = true
+fix = true
+
+[tool.ruff.lint]
+extend-select = []
+ignore = []
