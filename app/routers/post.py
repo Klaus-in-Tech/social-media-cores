@@ -39,7 +39,7 @@ def delete_post(id: int, db: Session=Depends(database.get_db)):
     # index = find_index_post(id)
     post = db.query(database_models.Posts).filter(database_models.Posts.id == id)
 
-    if post.first() == None:
+    if post.first() is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"post with id {id} does not exist")
     post.delete(synchronize_session=False)
     db.commit()
@@ -52,7 +52,7 @@ def update_post(id: int, updated_post: schemas.CreatePost, db: Session=Depends(d
     post_query = db.query(database_models.Posts).filter(database_models.Posts.id == id)
     post = post_query.first()
     
-    if post == None:
+    if post is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"Post with id {id} not found")
     
