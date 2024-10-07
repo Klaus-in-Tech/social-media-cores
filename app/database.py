@@ -10,8 +10,9 @@ password = settings.ORACLE_DB_PASSWORD
 dsn = settings.ORACLE_DB_DSN
 
 engine = create_engine(f"oracle+oracledb://{username}:{password}@{dsn}")
-               
+
 database_models.Base.metadata.create_all(bind=engine)
+
 
 def get_db():
     db = Session(engine)

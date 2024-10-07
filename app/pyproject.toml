@@ -5,3 +5,6 @@ fix = true
 [tool.ruff.lint]
 extend-select = []
 ignore = []
+
+[tool.ruff.format]
+quote-style = "double"

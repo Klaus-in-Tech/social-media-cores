@@ -3,8 +3,10 @@ from sqlalchemy import CLOB, Boolean, Identity, Column, Integer, String, Foreign
 from sqlalchemy.sql.sqltypes import TIMESTAMP
 from sqlalchemy.sql.expression import text
 
+
 class Base(DeclarativeBase):
     pass
+
 
 class Posts(Base):
     __tablename__ = "posts"
@@ -17,7 +19,9 @@ class Posts(Base):
         TIMESTAMP(timezone=True), nullable=False, server_default=text("SYSTIMESTAMP")
     )
     published = Column(Boolean, server_default="1", nullable=False)
-    owner_id = Column(Integer, ForeignKey('users.id',ondelete="CASCADE") ,nullable=False)
+    owner_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
 
 
 class Users(Base):
